@@ -1,5 +1,5 @@
 /**
- * angular-growl-v2 - v0.7.3 - 2015-02-22
+ * angular-growl-v2 - v0.7.3 - 2015-08-17
  * http://janstevens.github.io/angular-growl-2
  * Copyright (c) 2015 Marco Rinck,Jan Stevens; Licensed MIT
  */
@@ -17,10 +17,10 @@ angular.module('angular-growl').directive('growl', [function () {
       },
       controller: [
         '$scope',
-        '$timeout',
+        '$interval',
         'growl',
         'growlMessages',
-        function ($scope, $timeout, growl, growlMessages) {
+        function ($scope, $interval, growl, growlMessages) {
           $scope.referenceId = $scope.reference || 0;
           growlMessages.initDirective($scope.referenceId, $scope.limitMessages);
           $scope.growlMessages = growlMessages;
@@ -34,7 +34,7 @@ angular.module('angular-growl').directive('growl', [function () {
           $scope.stopTimeoutClose = function (message) {
             if (!message.clickToClose) {
               angular.forEach(message.promises, function (promise) {
-                $timeout.cancel(promise);
+                $interval.cancel(promise);
               });
               if (message.close) {
                 growlMessages.deleteMessage(message);
@@ -284,8 +284,8 @@ angular.module('angular-growl').provider('growl', function () {
 });
 angular.module('angular-growl').service('growlMessages', [
   '$sce',
-  '$timeout',
-  function ($sce, $timeout) {
+  '$interval',
+  function ($sce, $interval) {
     'use strict';
     this.directives = {};
     var preloadDirectives = {};
@@ -356,7 +356,7 @@ angular.module('angular-growl').service('growlMessages', [
         message.countdownFunction = function () {
           if (message.countdown > 1) {
             message.countdown--;
-            message.promises.push($timeout(message.countdownFunction, 1000));
+            message.promises.push($interval(message.countdownFunction, 1000, 1));
           } else {
             message.countdown--;
           }
@@ -377,10 +377,10 @@ angular.module('angular-growl').service('growlMessages', [
         message.onopen();
       }
       if (message.ttl && message.ttl !== -1) {
-        message.promises.push($timeout(angular.bind(this, function () {
+        message.promises.push($interval(angular.bind(this, function () {
           this.deleteMessage(message);
-        }), message.ttl));
-        message.promises.push($timeout(message.countdownFunction, 1000));
+        }), message.ttl, 1));
+        message.promises.push($interval(message.countdownFunction, 1000, 1));
       }
       return message;
     };
